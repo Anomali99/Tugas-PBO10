@@ -39,7 +39,6 @@ import javax.persistence.criteria.Root;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import net.sf.jasperreports.engine.JRException;
@@ -127,6 +126,11 @@ public class Main extends javax.swing.JFrame {
                 "ISBN", "Judul Buku", "Tahun Terbit", "Penerbit"
             }
         ));
+        tbl.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            public void mouseDragged(java.awt.event.MouseEvent evt) {
+                tblMouseDragged(evt);
+            }
+        });
         tbl.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 tblMouseClicked(evt);
@@ -225,68 +229,67 @@ public class Main extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        if(jButton2.getText().equals("KIRIM")){
-            Email el = new Email(null,true);
+        if (jButton2.getText().equals("KIRIM")) {
+            Email el = new Email(null, true);
             el.setVisible(true);
             kirim(el.email);
         } else {
-            String s = tbl.getValueAt(tbl.getSelectedRow(), 0).toString().trim();
+            int[] index = tbl.getSelectedRows();
             ImageIcon icon = new ImageIcon(getClass().getResource("/img/hapus1.png"));
-            if(JOptionPane.showConfirmDialog(null, "Menghapus buku dengan ISBN "+s, "Apakah anda yakin", 0, 0, icon)==0)
-                hapus(s); 
+            if (JOptionPane.showConfirmDialog(null, "Menghapus buku yang dipilih", "Apakah anda yakin", 0, 0, icon) == 0) {
+                for (int i : index) {
+                    String s = tbl.getValueAt(i, 0).toString().trim();
+                    hapus(s);
+                }
+            }
         }
         tampil();
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        if(jButton5.getText().equals("UBAH")){
+        if (jButton5.getText().equals("UBAH")) {
             String id = tbl.getValueAt(tbl.getSelectedRow(), 0).toString().trim();
-            EntityManagerFactory emf=Persistence.createEntityManagerFactory("PBO9PU");
-            EntityManager em=emf.createEntityManager();
+            EntityManagerFactory emf = Persistence.createEntityManagerFactory("PBO9PU");
+            EntityManager em = emf.createEntityManager();
             em.getTransaction().begin();
-            Buku bok =em.find(Buku.class,id);
-            new Tambah(null,true,bok).setVisible(true);
+            Buku bok = em.find(Buku.class, id);
+            new Tambah(null, true, bok).setVisible(true);
             em.close();
-            emf.close();    
-        } else
-            new Tambah(null,true).setVisible(true);
+            emf.close();
+        } else {
+            new Tambah(null, true).setVisible(true);
+        }
         tampil();
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void tblMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblMouseClicked
-        if(jButton1.getText().equals("CETAK"))
+        if (jButton1.getText().equals("CETAK")) {
             jButton1.setText("BATAL");
-        if(jButton5.getText().equals("TAMBAH"))
+        }
+        if (jButton5.getText().equals("TAMBAH")) {
             jButton5.setText("UBAH");
-        if(jButton2.getText().equals("KIRIM")){
+        }
+        if (jButton2.getText().equals("KIRIM")) {
             jButton2.setText("HAPUS");
             jButton2.setBackground(Color.red);
         }
+        jButton3.setVisible(false);
     }//GEN-LAST:event_tblMouseClicked
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        if(jButton1.getText().equals("BATAL"))
+        if (jButton1.getText().equals("BATAL")) {
             tampil();
-        else {
+        } else {
             String reportPath = "src/report/laporan.jrxml";
             // awal persistence
             EntityManagerFactory emf = Persistence.createEntityManagerFactory("PBO9PU");
             EntityManager em = emf.createEntityManager();
             em.getTransaction().begin();
-
-            CriteriaBuilder cb = em.getCriteriaBuilder();
-            CriteriaQuery<Buku> cq = cb.createQuery(Buku.class);
-            Root<Buku> bok = cq.from(Buku.class);
-            cq.select(bok);
-
-            TypedQuery<Buku> q = em.createQuery(cq);
-            List<Buku> list = q.getResultList();
             Query query = em.createQuery("SELECT b FROM Buku b");
             List<Buku> result = query.getResultList();
-
+            
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(result);
-
-
+            
             try {
                 JasperReport jasperReport = JasperCompileManager.compileReport(reportPath);
                 JasperPrint print = JasperFillManager.fillReport(jasperReport, null, dataSource);
@@ -295,7 +298,7 @@ public class Main extends javax.swing.JFrame {
             } catch (JRException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
-
+            
             em.getTransaction().commit();
             em.close();
             emf.close();
@@ -309,16 +312,10 @@ public class Main extends javax.swing.JFrame {
         file.setCurrentDirectory(new File(System.getProperty("user.home")));
         int result = file.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
-
             EntityManager entityManager = Persistence.createEntityManagerFactory("PBO9PU").createEntityManager();
             entityManager.getTransaction().begin();
-
             File fil = file.getSelectedFile();
-            String path = fil.getPath();
             String filepath = fil.getPath();
-            String fi = fil.getName();
-            //Parsing CSV Data
-
             try {
                 InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(filepath));
                 org.apache.commons.csv.CSVParser csvParser = CSVFormat.DEFAULT.parse(inputStreamReader);
@@ -339,6 +336,18 @@ public class Main extends javax.swing.JFrame {
         }
         tampil();
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void tblMouseDragged(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblMouseDragged
+        if (jButton1.getText().equals("CETAK")) {
+            jButton1.setText("BATAL");
+        }
+        jButton5.setVisible(false);
+        jButton3.setVisible(false);
+        if (jButton2.getText().equals("KIRIM")) {
+            jButton2.setText("HAPUS");
+            jButton2.setBackground(Color.red);
+        }
+    }//GEN-LAST:event_tblMouseDragged
 
     /**
      * @param args the command line arguments
@@ -392,18 +401,18 @@ public class Main extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     private void setColWidht() {
-        int[] noCol = {0,2};
-        int[] noColW = {100,100};
+        int[] noCol = {0, 2};
+        int[] noColW = {100, 100};
         
         TableColumnModel tblModel = tbl.getColumnModel();
-        for(int i = 0; i < noCol.length; i++){
-        tblModel.getColumn(noCol[i]).setPreferredWidth(noColW[i]);
-        tblModel.getColumn(noCol[i]).setMaxWidth(noColW[i]);
-        tblModel.getColumn(noCol[i]).setMinWidth(noColW[i]);
+        for (int i = 0; i < noCol.length; i++) {
+            tblModel.getColumn(noCol[i]).setPreferredWidth(noColW[i]);
+            tblModel.getColumn(noCol[i]).setMaxWidth(noColW[i]);
+            tblModel.getColumn(noCol[i]).setMinWidth(noColW[i]);
         }
     }
     
-    private void tampil(){
+    private void tampil() {
         DefaultTableModel tbl1 = (DefaultTableModel) tbl.getModel();
         tbl1.setRowCount(0);
         // awal persistence
@@ -413,122 +422,124 @@ public class Main extends javax.swing.JFrame {
         
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Buku> cq = cb.createQuery(Buku.class);
-
+        
         Root<Buku> bok = cq.from(Buku.class);
-
+        
         cq.select(bok.get("isbn"));
-
+        
         CriteriaQuery<Buku> select = cq.select(bok);
         TypedQuery<Buku> q = em.createQuery(select);
         List<Buku> list = q.getResultList();
-
+        
         for (Buku data : list) {
             Object[] baris = new Object[4];
             baris[0] = data.getIsbn().trim();
             baris[1] = data.getJudul_buku().trim();
             baris[2] = data.getTahun_terbit().trim();
             baris[3] = data.getPenerbit().trim();
-
+            
             tbl1.addRow(baris);
         }
-
+        
         em.getTransaction().commit();
         em.close();
-        emf.close();    
+        emf.close();
         // akhir persistence
-        if(jButton1.getText().equals("BATAL"))
+        if (jButton1.getText().equals("BATAL")) {
             jButton1.setText("CETAK");
-        if(jButton5.getText().equals("UBAH"))
+        }
+        jButton5.setVisible(true);
+        jButton3.setVisible(true);
+        if (jButton5.getText().equals("UBAH")) {
             jButton5.setText("TAMBAH");
-        if(jButton2.getText().equals("HAPUS")){
+        }
+        if (jButton2.getText().equals("HAPUS")) {
             jButton2.setText("KIRIM");
             jButton2.setBackground(Color.black);
         }
+        jLabel1.requestFocus();
     }
     
-        
-    
-    
-    private void kirim(String penerima){
+    private void kirim(String penerima) {
         Properties pros = new Properties();
         pros.put("mail.smtp.auth", "true");
         pros.put("mail.smtp.starttls.enable", "true");
         pros.put("mail.smtp.host", "smtp.gmail.com");
         pros.put("mail.smtp.port", "587");
         
-        Session ses = Session.getInstance(pros,new javax.mail.Authenticator() {
-            protected PasswordAuthentication getPasswordAuthentication(){
-                return new PasswordAuthentication(GMail,pass1);
+        Session ses = Session.getInstance(pros, new javax.mail.Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(GMail, pass1);
             }
         });
         
         try {
             String reportPath = "src/report/laporan.jrxml";
-            
+
             // awal persistence
             EntityManagerFactory emf = Persistence.createEntityManagerFactory("PBO9PU");
             EntityManager em = emf.createEntityManager();
             em.getTransaction().begin();
-
+            
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Buku> cq = cb.createQuery(Buku.class);
             Root<Buku> bok = cq.from(Buku.class);
             cq.select(bok);
-
+            
             TypedQuery<Buku> q = em.createQuery(cq);
             List<Buku> list = q.getResultList();
             Query query = em.createQuery("SELECT b FROM Buku b");
             List<Buku> result = query.getResultList();
-
+            
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(result);
-
+            
             JasperReport jasperReport = JasperCompileManager.compileReport(reportPath);
             JasperPrint print = JasperFillManager.fillReport(jasperReport, null, dataSource);
-
+            
             em.getTransaction().commit();
             em.close();
             emf.close();
             // akhir persistence
-            
+
             Message mess = new MimeMessage(ses);
             mess.setFrom(new InternetAddress(GMail));
             mess.setRecipients(Message.RecipientType.TO, InternetAddress.parse(penerima));
             mess.setSubject("Laporan Data Buku Perpustakaan");
             mess.setText("Data Buku");
-
+            
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             JRPdfExporter exporter = new JRPdfExporter();
             exporter.setParameter(JRExporterParameter.JASPER_PRINT, print);
             exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, outputStream);
             exporter.exportReport();
-
+            
             DataSource source = new ByteArrayDataSource(outputStream.toByteArray(), "application/pdf");
             MimeBodyPart attachment = new MimeBodyPart();
             attachment.setDataHandler(new DataHandler(source));
-            attachment.setFileName("Data Buku.pdf"); 
-
+            attachment.setFileName("Data Buku.pdf");
+            
             Multipart multipart = new MimeMultipart();
             multipart.addBodyPart(attachment);
-
+            
             mess.setContent(multipart);
-
+            
             Transport.send(mess);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
     
-    private void hapus(String id){
+    private void hapus(String id) {
         // awal persistence
-        EntityManagerFactory emf=Persistence.createEntityManagerFactory("PBO9PU");  
-        EntityManager em=emf.createEntityManager();  
-        em.getTransaction().begin();  
-        Buku s=em.find(Buku.class,id);  
-        em.remove(s);  
-        em.getTransaction().commit();  
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("PBO9PU");
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+        Buku s = em.find(Buku.class, id);
+        em.remove(s);
+        em.getTransaction().commit();
         em.close();
-        emf.close();    
+        emf.close();
         // akhir persistence
-        
+
     }
 }
