@@ -62,9 +62,9 @@ public class Main extends javax.swing.JFrame {
     /**
      * Creates new form Main
      */
-    private static String GMail = "fatiqnur@gmail.com";
-    private static String pass1 = "ubwl qrza mcou bihj";
-    
+    private String GMail = "emailmu@gmail.com";
+    private String pass1 = "abcd abcd abcd abcd";
+
     public Main() throws SQLException {
         initComponents();
         setColWidht();
@@ -134,6 +134,9 @@ public class Main extends javax.swing.JFrame {
         tbl.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 tblMouseClicked(evt);
+            }
+            public void mouseReleased(java.awt.event.MouseEvent evt) {
+                tblMouseReleased(evt);
             }
         });
         jScrollPane1.setViewportView(tbl);
@@ -239,7 +242,8 @@ public class Main extends javax.swing.JFrame {
             if (JOptionPane.showConfirmDialog(null, "Menghapus buku yang dipilih", "Apakah anda yakin", 0, 0, icon) == 0) {
                 for (int i : index) {
                     String s = tbl.getValueAt(i, 0).toString().trim();
-                    hapus(s);
+//                    hapus(s);
+                    System.out.println(s + "; ");
                 }
             }
         }
@@ -287,9 +291,9 @@ public class Main extends javax.swing.JFrame {
             em.getTransaction().begin();
             Query query = em.createQuery("SELECT b FROM Buku b");
             List<Buku> result = query.getResultList();
-            
+
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(result);
-            
+
             try {
                 JasperReport jasperReport = JasperCompileManager.compileReport(reportPath);
                 JasperPrint print = JasperFillManager.fillReport(jasperReport, null, dataSource);
@@ -298,7 +302,7 @@ public class Main extends javax.swing.JFrame {
             } catch (JRException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
-            
+
             em.getTransaction().commit();
             em.close();
             emf.close();
@@ -348,6 +352,10 @@ public class Main extends javax.swing.JFrame {
             jButton2.setBackground(Color.red);
         }
     }//GEN-LAST:event_tblMouseDragged
+
+    private void tblMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblMouseReleased
+        // TODO add your handling code here:
+    }//GEN-LAST:event_tblMouseReleased
 
     /**
      * @param args the command line arguments
@@ -403,7 +411,7 @@ public class Main extends javax.swing.JFrame {
     private void setColWidht() {
         int[] noCol = {0, 2};
         int[] noColW = {100, 100};
-        
+
         TableColumnModel tblModel = tbl.getColumnModel();
         for (int i = 0; i < noCol.length; i++) {
             tblModel.getColumn(noCol[i]).setPreferredWidth(noColW[i]);
@@ -411,7 +419,7 @@ public class Main extends javax.swing.JFrame {
             tblModel.getColumn(noCol[i]).setMinWidth(noColW[i]);
         }
     }
-    
+
     private void tampil() {
         DefaultTableModel tbl1 = (DefaultTableModel) tbl.getModel();
         tbl1.setRowCount(0);
@@ -419,28 +427,28 @@ public class Main extends javax.swing.JFrame {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("PBO9PU");
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
-        
+
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Buku> cq = cb.createQuery(Buku.class);
-        
+
         Root<Buku> bok = cq.from(Buku.class);
-        
+
         cq.select(bok.get("isbn"));
-        
+
         CriteriaQuery<Buku> select = cq.select(bok);
         TypedQuery<Buku> q = em.createQuery(select);
         List<Buku> list = q.getResultList();
-        
+
         for (Buku data : list) {
             Object[] baris = new Object[4];
             baris[0] = data.getIsbn().trim();
             baris[1] = data.getJudul_buku().trim();
             baris[2] = data.getTahun_terbit().trim();
             baris[3] = data.getPenerbit().trim();
-            
+
             tbl1.addRow(baris);
         }
-        
+
         em.getTransaction().commit();
         em.close();
         emf.close();
@@ -459,20 +467,20 @@ public class Main extends javax.swing.JFrame {
         }
         jLabel1.requestFocus();
     }
-    
+
     private void kirim(String penerima) {
         Properties pros = new Properties();
         pros.put("mail.smtp.auth", "true");
         pros.put("mail.smtp.starttls.enable", "true");
         pros.put("mail.smtp.host", "smtp.gmail.com");
         pros.put("mail.smtp.port", "587");
-        
+
         Session ses = Session.getInstance(pros, new javax.mail.Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(GMail, pass1);
             }
         });
-        
+
         try {
             String reportPath = "src/report/laporan.jrxml";
 
@@ -480,22 +488,22 @@ public class Main extends javax.swing.JFrame {
             EntityManagerFactory emf = Persistence.createEntityManagerFactory("PBO9PU");
             EntityManager em = emf.createEntityManager();
             em.getTransaction().begin();
-            
+
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Buku> cq = cb.createQuery(Buku.class);
             Root<Buku> bok = cq.from(Buku.class);
             cq.select(bok);
-            
+
             TypedQuery<Buku> q = em.createQuery(cq);
             List<Buku> list = q.getResultList();
             Query query = em.createQuery("SELECT b FROM Buku b");
             List<Buku> result = query.getResultList();
-            
+
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(result);
-            
+
             JasperReport jasperReport = JasperCompileManager.compileReport(reportPath);
             JasperPrint print = JasperFillManager.fillReport(jasperReport, null, dataSource);
-            
+
             em.getTransaction().commit();
             em.close();
             emf.close();
@@ -506,29 +514,29 @@ public class Main extends javax.swing.JFrame {
             mess.setRecipients(Message.RecipientType.TO, InternetAddress.parse(penerima));
             mess.setSubject("Laporan Data Buku Perpustakaan");
             mess.setText("Data Buku");
-            
+
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             JRPdfExporter exporter = new JRPdfExporter();
             exporter.setParameter(JRExporterParameter.JASPER_PRINT, print);
             exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, outputStream);
             exporter.exportReport();
-            
+
             DataSource source = new ByteArrayDataSource(outputStream.toByteArray(), "application/pdf");
             MimeBodyPart attachment = new MimeBodyPart();
             attachment.setDataHandler(new DataHandler(source));
             attachment.setFileName("Data Buku.pdf");
-            
+
             Multipart multipart = new MimeMultipart();
             multipart.addBodyPart(attachment);
-            
+
             mess.setContent(multipart);
-            
+
             Transport.send(mess);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
+
     private void hapus(String id) {
         // awal persistence
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("PBO9PU");
